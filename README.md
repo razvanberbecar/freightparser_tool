@@ -54,7 +54,7 @@ npm run dev
 - [x] **Phase 3** — Backend API (`/api/extract`, `/api/export`, `/health`, CORS). Export currently writes a generic Field/Value sheet; Phase 4 swaps in the templated named-range output.
 - [x] **Phase 4** — Excel templates. `cmr_template.xlsx` (trilingual RO/EN/FR) and `awb_template.xlsx` (IATA) built with named ranges (`backend/scripts/build_templates.py`); `excel_service` fills templates by named range; both extraction prompts + models output exactly the template field names, so `extract → export` fills the forms end-to-end. **BOL removed for now** (ocean vs. US-LTL bill of lading undecided — to revisit). (Visual eyeball of the templates in Excel still recommended.)
 - [x] **Phase 5** — React frontend. Doc-type selector, drag-drop upload (react-dropzone), editable fields form (react-hook-form) with confidence badge, export/download, toasts (react-hot-toast), Tailwind styling. `doc_type` carried through extract → export. (`vite.config.js` dedupes React to avoid a pre-bundle "Invalid hook call".)
-- [ ] Phase 6 — Integration testing
+- [x] **Phase 6** — Automated tests (`backend/tests/`, run `cd backend && python -m pytest`): endpoint tests with Claude mocked, plus regression tests locking the extraction↔template field alignment. Manual QA steps in [QA_CHECKLIST.md](QA_CHECKLIST.md).
 - [ ] Phase 7 — Deployment (Vercel + Railway)
 - [ ] Phase 8 — Feedback & iteration
 

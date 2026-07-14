@@ -55,7 +55,7 @@ npm run dev
 - [x] **Phase 4** — Excel templates. `cmr_template.xlsx` (trilingual RO/EN/FR) and `awb_template.xlsx` (IATA) built with named ranges (`backend/scripts/build_templates.py`); `excel_service` fills templates by named range; both extraction prompts + models output exactly the template field names, so `extract → export` fills the forms end-to-end. **BOL removed for now** (ocean vs. US-LTL bill of lading undecided — to revisit). (Visual eyeball of the templates in Excel still recommended.)
 - [x] **Phase 5** — React frontend. Doc-type selector, drag-drop upload (react-dropzone), editable fields form (react-hook-form) with confidence badge, export/download, toasts (react-hot-toast), Tailwind styling. `doc_type` carried through extract → export. (`vite.config.js` dedupes React to avoid a pre-bundle "Invalid hook call".)
 - [x] **Phase 6** — Automated tests (`backend/tests/`, run `cd backend && python -m pytest`): endpoint tests with Claude mocked, plus regression tests locking the extraction↔template field alignment. Manual QA steps in [QA_CHECKLIST.md](QA_CHECKLIST.md).
-- [ ] Phase 7 — Deployment (Vercel + Railway)
+- [~] **Phase 7** — Deployment prep done ([DEPLOYMENT.md](DEPLOYMENT.md)): Railway config (`backend/railway.json` — `$PORT` bind + `/health` check), Python 3.11 pin (`backend/.python-version`), production CORS/env wiring (no code change — env-driven), Vercel settings. **The actual deploy (accounts, connecting the repo, secrets) is done by you** following the guide.
 - [ ] Phase 8 — Feedback & iteration
 
 ## Changes from the architecture doc

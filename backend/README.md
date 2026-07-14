@@ -21,6 +21,17 @@ uvicorn app.main:app --reload --port 8000
 - Health check: http://localhost:8000/health
 - Swagger UI: http://localhost:8000/docs
 
+## Test
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest        # from the backend/ directory
+```
+
+Endpoint tests mock Claude (no billed API calls); `tests/test_models.py`
+guards that the extraction model fields stay aligned to the template named
+ranges.
+
 ## Layout
 
 | Path | Purpose |

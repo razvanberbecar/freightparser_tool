@@ -1,38 +1,45 @@
-// DocTypeSelector — pick the output document type (CMR or AWB).
+// DocTypeSelector — segmented control for the output document type.
 
 const TYPES = [
-  { id: 'cmr', label: 'CMR', desc: 'Road freight — Scrisoare de trasură' },
+  { id: 'cmr', label: 'CMR', desc: 'Road freight — Scrisoare de trăsură' },
   { id: 'awb', label: 'AWB', desc: 'Air Waybill' },
 ]
 
 function DocTypeSelector({ value, onChange }) {
   return (
-    <section>
-      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-        1. Choose output document
-      </h2>
-      <div className="grid grid-cols-2 gap-3">
+    <div className="flex items-center gap-2.5">
+      <span className="label-micro hidden sm:inline">Output</span>
+      <div
+        role="radiogroup"
+        aria-label="Output document type"
+        className={[
+          'inline-flex rounded-lg border bg-raised p-0.5 transition-colors',
+          value ? 'border-line' : 'border-accent/50',
+        ].join(' ')}
+      >
         {TYPES.map((type) => {
           const selected = value === type.id
           return (
             <button
               key={type.id}
               type="button"
+              role="radio"
+              aria-checked={selected}
+              title={type.desc}
               onClick={() => onChange(type.id)}
               className={[
-                'rounded-lg border p-4 text-left transition',
+                'rounded-md px-3 py-1 font-mono text-xs font-medium tracking-wide transition-all',
                 selected
-                  ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500 dark:border-emerald-500 dark:bg-emerald-500/10'
-                  : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-500',
+                  ? 'bg-accent text-accent-ink shadow-sm'
+                  : 'text-muted hover:text-ink',
               ].join(' ')}
             >
-              <div className="text-lg font-bold text-slate-900 dark:text-slate-100">{type.label}</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400">{type.desc}</div>
+              {type.label}
             </button>
           )
         })}
       </div>
-    </section>
+    </div>
   )
 }
 

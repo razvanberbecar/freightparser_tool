@@ -1,10 +1,23 @@
-// LoadingSpinner — shown while Claude extracts the document.
+// LoadingSpinner — the scanning state shown while Claude extracts the document.
 
-function LoadingSpinner({ label = 'Extracting fields…' }) {
+import { FileText } from 'lucide-react'
+
+function LoadingSpinner({ label = 'Extracting fields' }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white p-10 dark:border-slate-700 dark:bg-slate-800">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-500 dark:border-slate-600 dark:border-t-emerald-500" />
-      <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{label}</p>
+    <div className="flex min-h-[22rem] flex-col items-center justify-center rounded-xl border border-line bg-surface">
+      {/* Document glyph with an accent scan line sweeping across it. */}
+      <div className="relative mb-5 flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-line-strong bg-raised text-muted">
+        <FileText size={18} />
+        <span
+          className="absolute inset-x-0 top-0 h-6 animate-sweep bg-gradient-to-b from-transparent via-accent/70 to-transparent"
+          aria-hidden="true"
+        />
+      </div>
+
+      <p className="text-[0.9375rem] font-medium text-ink" role="status" aria-live="polite">
+        {label}
+      </p>
+      <p className="label-micro mt-2">Reading the document · this takes a few seconds</p>
     </div>
   )
 }

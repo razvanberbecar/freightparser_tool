@@ -3,6 +3,7 @@
 import { useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import toast from 'react-hot-toast'
+import { FileUp, Lock } from 'lucide-react'
 
 const MAX_SIZE = 10 * 1024 * 1024 // 10 MB (matches backend MAX_FILE_SIZE_MB)
 
@@ -11,6 +12,20 @@ const ACCEPT = {
   'image/png': ['.png'],
   'image/jpeg': ['.jpg', '.jpeg'],
   'image/tiff': ['.tif', '.tiff'],
+}
+
+// Crop-mark corner brackets — a technical frame around the drop surface.
+function Corners({ active }) {
+  const base = 'pointer-events-none absolute h-3 w-3 transition-colors duration-200'
+  const color = active ? 'border-accent' : 'border-line-strong'
+  return (
+    <>
+      <span className={`${base} ${color} left-2 top-2 border-l border-t`} />
+      <span className={`${base} ${color} right-2 top-2 border-r border-t`} />
+      <span className={`${base} ${color} bottom-2 left-2 border-b border-l`} />
+      <span className={`${base} ${color} bottom-2 right-2 border-b border-r`} />
+    </>
+  )
 }
 
 function UploadZone({ docType, onFile }) {
@@ -41,34 +56,65 @@ function UploadZone({ docType, onFile }) {
   })
 
   return (
-    <section>
-      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-        2. Upload a document
-      </h2>
-      <div
-        {...getRootProps()}
-        className={[
-          'flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-10 text-center transition',
-          disabled
-            ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500'
-            : isDragActive
-              ? 'cursor-pointer border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-300'
-              : 'cursor-pointer border-slate-300 bg-white text-slate-600 hover:border-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-500',
-        ].join(' ')}
-      >
-        <input {...getInputProps()} />
+    <div
+      {...getRootProps()}
+      className={[
+        'relative flex min-h-[22rem] flex-col items-center justify-center overflow-hidden rounded-xl border transition-colors duration-200',
+        disabled
+          ? 'cursor-not-allowed border-line bg-surface/40'
+          : isDragActive
+            ? 'cursor-copy border-accent bg-accent/[0.06]'
+            : 'cursor-pointer border-line bg-surface hover:border-line-strong',
+      ].join(' ')}
+    >
+      <div className="blueprint absolute inset-0 opacity-60" aria-hidden="true" />
+      <Corners active={isDragActive && !disabled} />
+
+      <input {...getInputProps()} />
+
+      <div className="relative flex flex-col items-center px-6 text-center">
+        <div
+          className={[
+            'mb-5 flex h-12 w-12 items-center justify-center rounded-lg border transition-all duration-200',
+            disabled
+              ? 'border-line text-faint'
+              : isDragActive
+                ? 'scale-110 border-accent bg-accent text-accent-ink'
+                : 'border-line-strong bg-raised text-muted',
+          ].join(' ')}
+        >
+          {disabled ? <Lock size={18} /> : <FileUp size={18} />}
+        </div>
+
         {disabled ? (
-          <p className="font-medium">Select CMR or AWB above first.</p>
+          <>
+            <p className="text-sm font-medium text-muted">Select an output format to begin</p>
+            <p className="label-micro mt-2">Choose CMR or AWB above</p>
+          </>
         ) : isDragActive ? (
-          <p className="font-medium">Drop the file to extract…</p>
+          <p className="text-sm font-medium text-accent">Release to extract</p>
         ) : (
           <>
-            <p className="font-medium">Drag &amp; drop a document here, or click to browse</p>
-            <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">PDF, PNG, JPG, or TIFF · max 10 MB</p>
+            <p className="text-[0.9375rem] font-medium text-ink">
+              Drop a freight document here
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              or{' '}
+              <span className="text-accent underline decoration-accent/40 underline-offset-2">
+                browse your files
+              </span>
+            </p>
+            <div className="mt-6 flex items-center gap-2 label-micro">
+              <span>PDF · PNG · JPG · TIFF</span>
+              <span className="h-2.5 w-px bg-line-strong" />
+              <span>Max 10 MB</span>
+              <span className="h-2.5 w-px bg-line-strong" />
+              <span>First 3 pages</span>
+            </div>
           </>
         )}
       </div>
-    </section>
+    </div>
   )
 }
 

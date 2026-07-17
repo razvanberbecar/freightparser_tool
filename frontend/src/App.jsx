@@ -1,22 +1,30 @@
 // Root component — composes the upload → extract → edit → export flow.
 
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { FormProvider, useForm } from 'react-hook-form'
 import { Toaster } from 'react-hot-toast'
 
-import DocTypeSelector from './components/DocTypeSelector'
-import UploadZone from './components/UploadZone'
-import LoadingSpinner from './components/LoadingSpinner'
+import ContextBar from './components/ContextBar'
 import ExtractedFields from './components/ExtractedFields'
-import ExportButton from './components/ExportButton'
-import ThemeToggle from './components/ThemeToggle'
+import LoadingSpinner from './components/LoadingSpinner'
+import TopBar from './components/TopBar'
+import UploadZone from './components/UploadZone'
 import { useExtraction } from './hooks/useExtraction'
 import { useTheme } from './hooks/useTheme'
+
+// Toast colors mirror the design tokens (react-hot-toast styles inline).
+const TOAST_THEME = {
+  dark: { background: '#191a1d', color: '#f5f5f2', border: '1px solid #2b2c31' },
+  light: { background: '#ffffff', color: '#1a1a1f', border: '1px solid #e4e1db' },
+}
 
 function App() {
   const ext = useExtraction()
   const methods = useForm()
   const { theme, toggle } = useTheme()
+
+  // Display-only: the hook takes the File but doesn't retain its name.
+  const [fileName, setFileName] = useState(null)
 
   // Load extracted values into the editable form (null -> '' to keep inputs controlled).
   useEffect(() => {
@@ -28,54 +36,66 @@ function App() {
     }
   }, [ext.fields, methods])
 
+  const handleFile = useCallback(
+    (file) => {
+      setFileName(file.name)
+      ext.extract(file)
+    },
+    [ext],
+  )
+
+  const handleReset = useCallback(() => {
+    setFileName(null)
+    ext.reset()
+  }, [ext])
+
+  const handleDocType = useCallback(
+    (docType) => {
+      setFileName(null)
+      ext.selectDocType(docType)
+    },
+    [ext],
+  )
+
+  const ready = ext.status === 'ready' && Boolean(ext.fields)
+
   return (
-    <div className="min-h-screen bg-slate-50 transition-colors dark:bg-slate-900">
+    <div className="min-h-screen bg-canvas">
       <Toaster
-        position="top-right"
-        toastOptions={
-          theme === 'dark'
-            ? { style: { background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155' } }
-            : {}
-        }
+        position="bottom-right"
+        toastOptions={{ style: TOAST_THEME[theme], duration: 4000 }}
       />
 
-      <header className="border-b border-slate-200 bg-white transition-colors dark:border-slate-700 dark:bg-slate-800">
-        <div className="mx-auto flex max-w-3xl items-start justify-between px-6 py-5">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              FreightParse
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Upload a freight document, review the extracted fields, and download a
-              filled CMR or AWB.
-            </p>
-          </div>
-          <ThemeToggle theme={theme} onToggle={toggle} />
-        </div>
-      </header>
+      <TopBar theme={theme} onToggleTheme={toggle} />
 
-      <main className="mx-auto max-w-3xl space-y-6 px-6 py-8">
-        <DocTypeSelector value={ext.docType} onChange={ext.selectDocType} />
+      <ContextBar
+        docType={ext.docType}
+        onDocTypeChange={handleDocType}
+        ready={ready}
+        fileName={fileName}
+        confidence={ext.confidence}
+        fieldCount={ext.fields ? Object.keys(ext.fields).length : 0}
+        exporting={ext.exporting}
+        onExport={() => ext.runExport(methods.getValues())}
+        onReset={handleReset}
+      />
 
+      <main className="mx-auto max-w-5xl px-5 py-8">
         {(ext.status === 'idle' || ext.status === 'error') && (
-          <UploadZone docType={ext.docType} onFile={ext.extract} />
+          <div className="animate-fade-up">
+            <UploadZone docType={ext.docType} onFile={handleFile} />
+          </div>
         )}
 
         {ext.status === 'extracting' && <LoadingSpinner />}
 
-        {ext.status === 'ready' && ext.fields && (
+        {ready && (
           <FormProvider {...methods}>
-            <div className="space-y-4">
-              <ExtractedFields
-                fields={ext.fields}
-                confidence={ext.confidence}
-                onReset={ext.reset}
-              />
-              <ExportButton
-                exporting={ext.exporting}
-                onExport={() => ext.runExport(methods.getValues())}
-              />
-            </div>
+            <ExtractedFields
+              docType={ext.docType}
+              fields={ext.fields}
+              confidence={ext.confidence}
+            />
           </FormProvider>
         )}
       </main>

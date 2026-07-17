@@ -1,3 +1,83 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Design tokens — HSL channel triplets so Tailwind opacity modifiers work.
+   Light is warm paper + ink; dark is graphite. A single high-vis signal-orange
+   accent carries brand, actions, and focus. */
+@layer base {
+  :root {
+    --canvas: 40 24% 97%;
+    --surface: 0 0% 100%;
+    --raised: 40 18% 95%;
+    --line: 40 10% 88%;
+    --line-strong: 40 8% 74%;
+    --ink: 240 9% 11%;
+    --muted: 240 5% 34%;
+    --faint: 240 5% 42%;
+    --accent: 20 90% 40%;
+    --accent-ink: 0 0% 100%;
+    --ok: 158 74% 30%;
+    --warn: 38 92% 38%;
+    --danger: 0 72% 45%;
+    --shadow: 240 20% 20%;
+
+    color-scheme: light;
+  }
+
+  .dark {
+    --canvas: 240 7% 7%;
+    --surface: 240 6% 10%;
+    --raised: 240 5% 14%;
+    --line: 240 5% 18%;
+    --line-strong: 240 5% 30%;
+    --ink: 60 6% 96%;
+    --muted: 240 5% 68%;
+    --faint: 240 5% 56%;
+    --accent: 24 95% 55%;
+    --accent-ink: 24 60% 8%;
+    --ok: 158 64% 48%;
+    --warn: 38 96% 56%;
+    --danger: 0 84% 65%;
+    --shadow: 0 0% 0%;
+
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans;
+  }
+
+  /* Consistent focus treatment for every interactive element. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent/60 ring-offset-0;
+  }
+
+  ::selection {
+    @apply bg-accent/25;
+  }
+}
+
+@layer components {
+  /* Tiny uppercase mono label — the workhorse of the inspector. */
+  .label-micro {
+    @apply font-mono text-micro font-medium uppercase text-faint;
+  }
+
+  /* Blueprint grid backdrop for the empty upload surface. */
+  .blueprint {
+    background-image:
+      linear-gradient(to right, hsl(var(--line) / 0.7) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--line) / 0.7) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 30%, transparent 75%);
+  }
+}

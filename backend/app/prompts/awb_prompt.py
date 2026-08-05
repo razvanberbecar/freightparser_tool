@@ -4,7 +4,7 @@ Field names match the awb_template.xlsx named ranges exactly (Section 8.2), so
 openpyxl fills the template by name.
 """
 
-from app.prompts import build_prompt
+from app.prompts import build_merge_prompt
 
 AWB_FIELDS = """\
 - shipper_name (shipper's name)
@@ -33,7 +33,6 @@ AWB_FIELDS = """\
 - total_collect (total collect charges)
 - other_charges (other charges)
 - execution_date (executed on date, YYYY-MM-DD)
-- execution_place (executed at place)
-- confidence (one of: high, medium, low)"""
+- execution_place (executed at place)"""
 
-AWB_PROMPT = build_prompt(AWB_FIELDS)
+AWB_PROMPT = build_merge_prompt(AWB_FIELDS)

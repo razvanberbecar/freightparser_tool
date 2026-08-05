@@ -59,3 +59,19 @@ def test_export_ignores_non_template_fields(client):
     assert resp.status_code == 200
     wb = load_workbook(io.BytesIO(resp.content))
     assert "confidence" not in wb.defined_names
+
+
+def test_export_neutralizes_formula_injection(client):
+    # A value from a third-party document that would be a live formula must be
+    # written as literal text (leading "'"), not evaluated on open.
+    payload = {
+        "doc_type": "cmr",
+        "fields": {"cargo_description": '=HYPERLINK("http://evil","x")'},
+    }
+    resp = client.post("/api/export", json=payload)
+    assert resp.status_code == 200
+    wb = load_workbook(io.BytesIO(resp.content))
+    sheet, coord = list(wb.defined_names["cargo_description"].destinations)[0]
+    cell = wb[sheet][coord]
+    assert cell.value.startswith("'=")  # quoted → inert text, not a formula
+    assert cell.data_type == "s"  # stored as string, not a formula

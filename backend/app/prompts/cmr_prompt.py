@@ -4,7 +4,7 @@ Field names match the cmr_template.xlsx named ranges exactly (Section 8.2), so
 openpyxl fills the template by name. Box numbers refer to the standard CMR form.
 """
 
-from app.prompts import build_prompt
+from app.prompts import build_merge_prompt
 
 CMR_FIELDS = """\
 - shipper (box 1: sender's full details — name, address, country — as one string)
@@ -27,7 +27,6 @@ CMR_FIELDS = """\
 - special_agreements (box 19: special agreements)
 - established_place (box 21: place where the consignment note was established)
 - established_date (box 21: date the consignment note was established, YYYY-MM-DD)
-- adr_class (dangerous-goods ADR classification — class/number/letter — if any)
-- confidence (one of: high, medium, low)"""
+- adr_class (dangerous-goods ADR classification — class/number/letter — if any)"""
 
-CMR_PROMPT = build_prompt(CMR_FIELDS)
+CMR_PROMPT = build_merge_prompt(CMR_FIELDS)

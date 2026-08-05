@@ -11,10 +11,12 @@ export const api = axios.create({ baseURL: API_URL })
 export const REUPLOAD_MESSAGE =
   "We couldn't read this document reliably. Please re-upload a clearer, higher-quality scan or photo."
 
-// POST /api/extract (multipart) -> extracted fields JSON (incl. `confidence`).
-export async function extractDocument(file, docType) {
+// POST /api/extract (multipart) -> merged extraction envelope:
+// { fields, conflicts, confidence, source_count }.
+// `files` is an array of File objects (the source documents for one shipment).
+export async function extractDocuments(files, docType) {
   const form = new FormData()
-  form.append('file', file)
+  for (const file of files) form.append('files', file)
   form.append('doc_type', docType)
   try {
     const { data } = await api.post('/api/extract', form)

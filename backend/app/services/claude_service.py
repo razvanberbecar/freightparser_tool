@@ -1,4 +1,8 @@
-"""Claude API integration: send document images, return parsed field JSON.
+"""Claude API integration: send document images, return a merged field set.
+
+All page images from every uploaded document (one shipment) go to Claude in a
+single call; the model merges them and returns a ``{fields, conflicts,
+confidence}`` envelope (see ``prompts.build_merge_prompt``).
 
 Uses the ``anthropic`` SDK with a single model (``config.MODEL``,
 ``claude-sonnet-4-6``). There is no model fallback: if extraction fails or the
@@ -28,8 +32,11 @@ _CRITICAL_FIELDS: dict[str, tuple[str, ...]] = {
     "awb": ("shipper_name", "consignee_name", "cargo_description"),
 }
 
-_MAX_TOKENS = 1500
-_USER_TEXT = "Extract the fields from this freight document."
+_MAX_TOKENS = 2000
+_USER_TEXT = (
+    "The images above are all the documents for one shipment. Extract and merge "
+    "their fields, and flag any conflicts, per your instructions."
+)
 
 # User-facing message the frontend shows when a document can't be read reliably.
 REUPLOAD_MESSAGE = (
@@ -107,22 +114,58 @@ def _parse_json_response(text: str) -> dict:
     return result
 
 
-def _is_low_quality(fields: dict, doc_type: str) -> bool:
+def _normalize_envelope(result: dict) -> dict:
+    """Coerce the model's JSON into a ``{fields, conflicts, confidence}`` shape.
+
+    Tolerant of older / flat output: if the model returns bare fields without a
+    ``fields`` wrapper, treat the whole object as the field set. ``confidence``
+    is lifted to the top level whether the model put it there or inside
+    ``fields``.
+    """
+    raw_fields = result.get("fields")
+    if isinstance(raw_fields, dict):
+        fields = dict(raw_fields)
+    else:
+        # Flat output — everything except the envelope keys is a field.
+        fields = {
+            k: v
+            for k, v in result.items()
+            if k not in ("fields", "conflicts", "confidence")
+        }
+
+    confidence = result.get("confidence")
+    if confidence is None:
+        confidence = fields.get("confidence")
+    # Confidence lives on the envelope, not among the template fields.
+    fields.pop("confidence", None)
+
+    conflicts = result.get("conflicts")
+    if not isinstance(conflicts, list):
+        conflicts = []
+
+    return {"fields": fields, "conflicts": conflicts, "confidence": confidence}
+
+
+def _is_low_quality(fields: dict, confidence, doc_type: str) -> bool:
     """True if confidence is low or a critical field is missing/empty."""
-    if str(fields.get("confidence", "")).lower() == "low":
+    if str(confidence or "").lower() == "low":
         return True
     return any(not fields.get(name) for name in _CRITICAL_FIELDS[doc_type])
 
 
-def extract_fields(images: list[PreparedImage], doc_type: str) -> dict:
-    """Extract freight fields from prepared document images.
+def extract_merged(images: list[PreparedImage], doc_type: str) -> dict:
+    """Extract and merge freight fields from one shipment's document images.
+
+    All images (every page of every uploaded document) are sent to Claude in a
+    single call; the model merges them into one field set and flags conflicts.
 
     Args:
-        images: ``(media_type, base64_data)`` blocks from ``pdf_service``.
+        images: ``(media_type, base64_data)`` blocks from ``pdf_service``,
+            spanning every uploaded document for the shipment.
         doc_type: One of ``cmr``, ``awb``.
 
     Returns:
-        The extracted fields as a dict, including a ``confidence`` key.
+        ``{"fields": dict, "conflicts": list, "confidence": str | None}``.
 
     Raises:
         LowQualityDocumentError: If the model output is unreadable, low
@@ -152,12 +195,12 @@ def extract_fields(images: list[PreparedImage], doc_type: str) -> dict:
     if not text_blocks:
         raise LowQualityDocumentError("Claude returned no text content.")
 
-    fields = _parse_json_response("".join(text_blocks))
+    envelope = _normalize_envelope(_parse_json_response("".join(text_blocks)))
 
     # No model fallback — a low-quality result is an error the user must act on.
-    if _is_low_quality(fields, doc_type):
+    if _is_low_quality(envelope["fields"], envelope["confidence"], doc_type):
         raise LowQualityDocumentError(
             f"Low-confidence or incomplete extraction for doc_type={doc_type}."
         )
 
-    return fields
+    return envelope

@@ -18,14 +18,30 @@ TEMPLATES_DIR = os.path.normpath(
 # Value types openpyxl can write directly; anything else is stringified.
 _SCALAR = (str, int, float, bool)
 
+# Leading characters that spreadsheet apps treat as the start of a formula.
+# Extracted values come from third-party documents (invoices, emails), so a
+# value like "=HYPERLINK(...)" must not become a live formula on open.
+_FORMULA_TRIGGERS = ("=", "+", "-", "@", "\t", "\r", "\n")
+
 
 def _template_path(doc_type: str) -> str:
     return os.path.join(TEMPLATES_DIR, f"{doc_type}_template.xlsx")
 
 
 def _cell_value(value):
-    """Coerce a field value to something a cell can hold."""
-    return value if isinstance(value, _SCALAR) else str(value)
+    """Coerce a field value to something a cell can hold.
+
+    Numbers/bools are written as-is; everything else is stringified. A string
+    that would otherwise be parsed as a formula is neutralised by prefixing a
+    single quote (Excel/CSV-injection guard) — the leading ``'`` marks the cell
+    as literal text and is not itself displayed.
+    """
+    if isinstance(value, (int, float, bool)):
+        return value
+    text = value if isinstance(value, str) else str(value)
+    if text.startswith(_FORMULA_TRIGGERS):
+        return "'" + text
+    return text
 
 
 def _to_buffer(workbook) -> io.BytesIO:

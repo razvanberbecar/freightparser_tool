@@ -8,9 +8,9 @@ models are lenient — they coerce common messy values and ignore unexpected key
 """
 
 import re
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 DocType = Literal["cmr", "awb"]
 Confidence = Literal["high", "medium", "low"]
@@ -118,3 +118,39 @@ EXTRACTION_MODELS: dict[str, type[_ExtractionBase]] = {
     "cmr": CMRExtraction,
     "awb": AWBExtraction,
 }
+
+
+class ConflictValue(BaseModel):
+    """One candidate value for a conflicting field, and where it came from."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    value: Any = None
+    source: Optional[str] = None
+
+
+class Conflict(BaseModel):
+    """A field that genuinely disagreed across the uploaded documents.
+
+    The user picks the correct value in the UI before export.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    field: str
+    values: list[ConflictValue] = Field(default_factory=list)
+
+
+class MergedExtraction(BaseModel):
+    """Response envelope for a multi-document extraction (see Section 3/4).
+
+    ``fields`` holds the merged, doc-type-validated field set; ``conflicts`` is
+    empty when nothing disagreed (including the single-document case).
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    fields: dict[str, Any] = Field(default_factory=dict)
+    conflicts: list[Conflict] = Field(default_factory=list)
+    confidence: Optional[Confidence] = None
+    source_count: int = 1

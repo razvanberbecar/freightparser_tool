@@ -23,7 +23,7 @@ function App() {
   const methods = useForm()
   const { theme, toggle } = useTheme()
 
-  // Display-only: the hook takes the File but doesn't retain its name.
+  // Display-only: the hook takes the Files but doesn't retain their names.
   const [fileName, setFileName] = useState(null)
 
   // Load extracted values into the editable form (null -> '' to keep inputs controlled).
@@ -36,12 +36,23 @@ function App() {
     }
   }, [ext.fields, methods])
 
-  const handleFile = useCallback(
-    (file) => {
-      setFileName(file.name)
-      ext.extract(file)
+  const handleExtract = useCallback(
+    (files) => {
+      setFileName(
+        files.length === 1 ? files[0].name : `${files.length} documents`,
+      )
+      ext.extract(files)
     },
     [ext],
+  )
+
+  // Resolving a conflict updates the merged data and the editable form input.
+  const handleResolveConflict = useCallback(
+    (field, value) => {
+      ext.resolveConflict(field, value)
+      methods.setValue(field, value ?? '')
+    },
+    [ext, methods],
   )
 
   const handleReset = useCallback(() => {
@@ -83,7 +94,7 @@ function App() {
       <main className="mx-auto max-w-5xl px-5 py-8">
         {(ext.status === 'idle' || ext.status === 'error') && (
           <div className="animate-fade-up">
-            <UploadZone docType={ext.docType} onFile={handleFile} />
+            <UploadZone docType={ext.docType} onExtract={handleExtract} />
           </div>
         )}
 
@@ -95,6 +106,9 @@ function App() {
               docType={ext.docType}
               fields={ext.fields}
               confidence={ext.confidence}
+              conflicts={ext.conflicts}
+              sourceCount={ext.sourceCount}
+              onResolve={handleResolveConflict}
             />
           </FormProvider>
         )}

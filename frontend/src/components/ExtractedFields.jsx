@@ -1,15 +1,26 @@
-// ExtractedFields — the extracted data as a grouped property inspector.
+// ExtractedFields — the merged data as a grouped property inspector, preceded
+// by any conflicts the merge surfaced.
 
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Layers } from 'lucide-react'
 
+import ConflictReview from './ConflictReview'
 import FieldRow from './FieldRow'
 import { groupFields } from '../lib/fieldGroups'
 
-function ExtractedFields({ docType, fields, confidence }) {
+function ExtractedFields({ docType, fields, confidence, conflicts, sourceCount, onResolve }) {
   const groups = groupFields(docType, fields)
 
   return (
     <div className="space-y-7">
+      {sourceCount > 1 && (
+        <div className="flex items-center gap-2 label-micro">
+          <Layers size={13} className="text-accent" />
+          <span>Merged from {sourceCount} source documents</span>
+        </div>
+      )}
+
+      <ConflictReview conflicts={conflicts} onResolve={onResolve} />
+
       {confidence === 'medium' && (
         <div className="flex items-start gap-2.5 rounded-lg border border-warn/30 bg-warn/[0.07] px-3.5 py-2.5">
           <AlertTriangle size={15} className="mt-px shrink-0 text-warn" />

@@ -18,6 +18,11 @@ CLAUDE_IMAGE_TYPES = {"image/png", "image/jpeg", "image/gif", "image/webp"}
 MAX_PAGES = 3
 RENDER_DPI = 150
 
+# Cap on the total number of page images across ALL documents in one shipment,
+# to control token cost and latency (architecture doc Section 5 — "Total image
+# count high — cap at ~10 pages total across all documents").
+MAX_TOTAL_PAGES = 10
+
 # A prepared image is (media_type, base64_data).
 PreparedImage = tuple[str, str]
 
@@ -71,3 +76,30 @@ def prepare_document_images(file_bytes: bytes, content_type: str) -> list[Prepar
     if content_type in ("image/tiff", "image/tif"):
         return [_raster_to_png(file_bytes)]
     raise ValueError(f"Unsupported document content type: {content_type!r}")
+
+
+def prepare_shipment_images(
+    documents: list[tuple[bytes, str]],
+) -> list[PreparedImage]:
+    """Prepare several uploaded documents (one shipment) into one image list.
+
+    Each document is rasterised with :func:`prepare_document_images`, and the
+    combined result is capped at :data:`MAX_TOTAL_PAGES` page images so a large
+    multi-document upload can't blow up token cost / latency.
+
+    Args:
+        documents: ``(file_bytes, content_type)`` pairs, in upload order.
+
+    Returns:
+        A combined list of ``(media_type, base64_data)`` image blocks, at most
+        ``MAX_TOTAL_PAGES`` long.
+
+    Raises:
+        ValueError: If any document has an unsupported content type.
+    """
+    images: list[PreparedImage] = []
+    for file_bytes, content_type in documents:
+        images.extend(prepare_document_images(file_bytes, content_type))
+        if len(images) >= MAX_TOTAL_PAGES:
+            break
+    return images[:MAX_TOTAL_PAGES]

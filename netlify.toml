@@ -1,0 +1,16 @@
+# Netlify config for the FreightParse frontend (static Vite build).
+# Netlify auto-detects this file when you import the repo — no manual
+# build settings needed. Set VITE_API_URL in the Netlify dashboard.
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"          # resolved relative to base -> frontend/dist
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Serve index.html for any path so the single-page app loads correctly.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

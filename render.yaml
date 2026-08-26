@@ -1,0 +1,27 @@
+# Render blueprint for the FreightParse backend (FastAPI).
+# Render auto-detects this file when you create a Blueprint from the repo.
+# The frontend is deployed separately on Cloudflare Pages.
+services:
+  - type: web
+    name: freightparse-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    region: frankfurt          # change to oregon/singapore/ohio/virginia if closer
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # Pin Python 3.11 — the pinned deps don't build on 3.12+.
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: MODEL
+        value: claude-sonnet-4-6
+      - key: MAX_FILE_SIZE_MB
+        value: "10"
+      # Secrets / deploy-time values — Render prompts for these in the dashboard.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Set to your Cloudflare Pages URL once the frontend is live (step 3).
+      - key: ALLOWED_ORIGINS
+        sync: false
